@@ -50,6 +50,7 @@
 
 | id | 원석 | 유형 | 상태 | 링크 / 포인터 | 한 줄 |
 | --- | --- | --- | --- | --- | --- |
+| `gem-jxta-variation-control` | 변동점 관리 → 현장 판단 흐름 | `playbook` | **active** (판단 설계) | [실무 글](https://jxta.kr/007/) · [`references/jxta-variation-control-2026-09-26.md`](../references/jxta-variation-control-2026-09-26.md) | 사건·영향 LOT·초품·복귀 검토 — **규범·모델 입력 아님** |
 | `gem-vivid-figures` | vivid-figures-skill | `artifact` | **deferred** | [트윗](https://x.com/geekbb/status/2098981921422467202) · [repo](https://github.com/yjz211/vivid-figures-skill) · [`references/geekbb-vivid-figures-skill-2026-09-13.md`](../references/geekbb-vivid-figures-skill-2026-09-13.md) | 차트 108레시피 — 라이선스·양식 검토 후 MIX |
 | `gem-jabref` | JabRef | `playbook` | **active** | [트윗](https://x.com/GitHub_Daily/status/2098766106899202111) · [repo](https://github.com/JabRef/jabref) · [`references/jabref-githubdaily-2026-09-12.md`](../references/jabref-githubdaily-2026-09-12.md) | PDF 참고문헌·인용 `.bib` 관리 |
 | `gem-opennews-ops-layer` | OpenNews MCP → 운영·카탈로그 레이어 | `idea` | **active** | [트윗](https://x.com/NFTCPS/status/2098963854869123429) · [repo](https://github.com/6551Team/opennews-mcp) · [`references/opennews-ops-layer-2026-09-13.md`](../references/opennews-ops-layer-2026-09-13.md) | 카탈로그·impact·action·우선케이스 — **기능/API 채택 ❌** |
