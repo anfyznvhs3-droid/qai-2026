@@ -105,7 +105,7 @@
   const tabs=[["choose","아이디어 20개"],["compare","후보 비교"],["map","데이터 관계도"],["prepare","회의 준비"]];
   const relationshipPanel=document.createElement("section");relationshipPanel.id="relationship-panel";relationshipPanel.className="collab";relationshipPanel.hidden=true;$("page-ideas").append(relationshipPanel);
   const intro=document.querySelector("#page-ideas > p");
-  const team=document.createElement("details");team.className="team-fold";team.append(node("summary","팀 작업 현황"));
+  const team=document.createElement("details");team.className="team-fold";team.append(node("summary","담당자별 진행 현황"));
   const cards=$("cards");cards.before(team);team.append(cards);$("app").insertBefore(team,area);
   const installPanel=document.createElement("details");installPanel.className="collab";installPanel.id="agent-install";
   installPanel.innerHTML='<summary>내 에이전트 설치</summary><p class="sub">PowerShell에 한 줄을 붙여넣으세요. 압축 해제나 관리자 권한 없이 내 작업 폴더와 qai 명령을 설치합니다.</p><pre id="install-command" style="white-space:pre-wrap;overflow-wrap:anywhere;background:#eef1ef;padding:16px;border-radius:6px"></pre><button type="button" id="copy-install">설치 명령 복사</button><p id="install-note" role="status"></p><p class="sub">설치 후 qai open으로 폴더를 열고 Codex·Cursor·Claude Code에서 작업하세요. 최신 회의 내용은 qai sync로 받습니다.</p>';
@@ -127,7 +127,7 @@
     if(view==="compare")compare();
   }
   for(const [view,labelText] of tabs){const b=node("button",labelText);b.type="button";b.dataset.view=view;b.onclick=()=>setView(view);nav.append(b);}
-  const dashboard=node("a","전체 현황 ↗");dashboard.href="/dash";nav.append(dashboard);
+  const dashboard=node("a","프로젝트 현황 ↗");dashboard.href="/dash";nav.append(dashboard);
   const installLink=node("a","에이전트 설치");installLink.href="#agent-install";installLink.onclick=()=>{installPanel.open=true;};nav.append(installLink);
   setView(tabs.some(t=>t[0]===sessionStorage.getItem("jari-view"))?sessionStorage.getItem("jari-view"):"choose");
   const uiStyle=document.createElement("style");uiStyle.textContent=`
