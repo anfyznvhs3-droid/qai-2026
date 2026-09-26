@@ -1,0 +1,16 @@
+[
+  {
+    "id": "kamp-guidebooks",
+    "title": "KAMP 가이드북 목록",
+    "why": "knowledge/kamp-guidebooks-manifest.csv에서 데이터 ID와 출처를 확인한다.",
+    "path": "knowledge/kamp-guidebooks-manifest.csv",
+    "kind": "목록"
+  },
+  {
+    "id": "root-industry",
+    "title": "뿌리산업 배경",
+    "why": "knowledge/root-industry/README.md와 sources.json에서 확인한다.",
+    "path": "knowledge/root-industry/README.md",
+    "kind": "배경"
+  }
+]

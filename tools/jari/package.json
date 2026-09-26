@@ -1,0 +1,9 @@
+{
+  "name": "qai-jari",
+  "private": true,
+  "type": "module",
+  "description": "Q.AI shared board. No model API. Not Agor source.",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

@@ -1,0 +1,51 @@
+[
+  {
+    "name": "2020-root-industry-survey-report.pdf",
+    "source_url": "https://www.kpic.re.kr/modules/setting/subPageManager/user/core/view/255/publication/inc/data/2020%EB%85%84_%EB%BF%8C%EB%A6%AC%EC%82%B0%EC%97%85_%EC%8B%A4%ED%83%9C%EC%A1%B0%EC%82%AC_%EB%B3%B4%EA%B3%A0%EC%84%9C_%EC%B5%9C%EC%A2%85_.pdf",
+    "status": "downloaded",
+    "bytes": 8972540,
+    "sha256": "C4583C673480E4513947176B6B8E2B8401FB52A42FE7A4CCF33E8DEFFE3ECC57"
+  },
+  {
+    "name": "2024-root-industry-survey-report.pdf",
+    "source_url": "https://www.kpic.re.kr/modules/setting/subPageManager/user/core/view/255/publication/inc/data/2024%EB%85%84%EB%BF%8C%EB%A6%AC%EC%82%B0%EC%97%85%EC%8B%A4%ED%83%9C%EC%A1%B0%EC%82%AC%EB%B3%B4%EA%B3%A0%EC%84%9C_F.pdf",
+    "status": "downloaded",
+    "bytes": 14333240,
+    "sha256": "A55C6963E52776CE0309110765BF5A7F8F3910F925F0C331D76C1B2115A0B388"
+  },
+  {
+    "name": "2024-root-industry-regional-results.xlsx",
+    "source_url": "https://www.kpic.re.kr/modules/setting/subPageManager/user/core/view/255/publication/inc/data/2024%EB%85%84_%EC%A7%80%EC%97%AD%EB%B3%84_%EB%BF%8C%EB%A6%AC%EC%82%B0%EC%97%85_%EC%A3%BC%EC%9A%94_%ED%95%AD%EB%AA%A9_%EA%B2%B0%EA%B3%BC.xlsx",
+    "status": "downloaded",
+    "bytes": 13386,
+    "sha256": "534D442F0A3B05D4725DEC1F3B729250D3EDDF50395ECAFF13311B8C39AA71D3"
+  },
+  {
+    "name": "2025-root-industry-survey-report.pdf",
+    "source_url": "https://www.kpic.re.kr/modules/setting/subPageManager/user/core/view/255/publication/inc/data/2025%EB%85%84_%EB%BF%8C%EB%A6%AC%EC%82%B0%EC%97%85_%EC%8B%A4%ED%83%9C%EC%A1%B0%EC%82%AC_%EB%B3%B4%EA%B3%A0%EC%84%9C_F.pdf",
+    "status": "downloaded",
+    "bytes": 17936888,
+    "sha256": "40B55008C28D82D431A85D679C405A33EF330C7E887DDB4A5322825B58465507"
+  },
+  {
+    "name": "2023-root-industry-regional-results.xlsx",
+    "source_url": "https://www.kpic.re.kr/modules/setting/subPageManager/user/core/view/255/publication/inc/data/%EC%A7%80%EC%97%AD%EB%B3%84_%EB%BF%8C%EB%A6%AC%EC%82%B0%EC%97%85_%EC%A3%BC%EC%9A%94_%ED%95%AD%EB%AA%A9_%EA%B2%B0%EA%B3%BC.xlsx",
+    "status": "downloaded",
+    "bytes": 11610,
+    "sha256": "F3F9804D4AD71C68436AF45B9E53967A1953FD5D3771C964168839B7390A8BCA"
+  },
+  {
+    "name": "2023-root-industry-survey-report.pdf",
+    "source_url": "https://www.kpic.re.kr/modules/setting/subPageManager/user/core/view/255/publication/inc/data/2023%EB%85%84_%EB%BF%8C%EB%A6%AC%EC%82%B0%EC%97%85_%EC%8B%A4%ED%83%9C%EC%A1%B0%EC%82%AC_%EB%B3%B4%EA%B3%A0%EC%84%9C_%EC%B5%9C%EC%A2%85.pdf",
+    "status": "downloaded",
+    "bytes": 10882203,
+    "sha256": "3390AB1CBA7A57254942FA263003D475B11D0233B05011193CB0BF3BCFCC53CA"
+  },
+  {
+    "name": "2025-root-industry-regional-results.xlsx",
+    "source_url": "https://www.kpic.re.kr/modules/setting/subPageManager/user/core/view/255/publication/inc/data/2025%EB%85%84_%EC%A7%80%EC%97%AD%EB%B3%84_%EB%BF%8C%EB%A6%AC%EC%82%B0%EC%97%85%20%EC%A3%BC%EC%9A%94%20%ED%95%AD%EB%AA%A9%20%EA%B2%B0%EA%B3%BC.xlsx",
+    "status": "downloaded",
+    "bytes": 13315,
+    "sha256": "47A273820288C64EDDF4D3845B96857116162B5B98B943D640BB31459BAD1AE2"
+  }
+]

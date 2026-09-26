@@ -1,0 +1,119 @@
+source_url: https://www.kamp-ai.kr/aidataDetail?page=2&DATASET_SEQ=12
+retrieved_at: 2026-09-03T23:44:57.4522570+09:00
+
+무료 제조 AI 데이터셋
+X-ray 검사장비 AI 데이터셋
+이미지 데이터 기반 이물질 검출을 위한 X-ray 검사장비 데이터
+제조AI데이터셋
+가이드북
+업종식품가공유형bmp
+목적품질보증제조데이터 등록일2020.12.14
+사용조건콘텐츠 변경허용최종 수정일자2025.04.02
+제공기관
+KAIST
+(수행기관: ㈜ 임픽스/한양대학교 산학협력단/㈜아큐라소프트)
+태그
+#가공식품,
+#초음파,
+#반도체,
+#검사측정,
+#포장공정,
+#X-RAY,
+#YOLO,
+#검사설비
+내용적용공정포장공정
+제조AI데이터셋 소개완제품 내 금속 및 이물 포함 여부를 검출하기위해 진행되는 X-RAY 비전검사 시, 불량품을 선별하기위한 제조 AI분석 과정을 담은 데이터셋과 가이드북입니다. 객체 탐지 분석 모델(YOLOv3) 알고리즘을 사용하여 신속하고 정확한 불량품 검출을 도모합니다.
+참고이미지Prev Next
+제조AI데이터셋 요약
+NO구분내용
+1분석 목적(현장이슈, 목적)포장공정의 마지막 단계에 완제품 내 금속 및 이물 포함 여부를 검출하기 위해 진행되는 X-RAY 비전검사는 소비자에게 완제품이 전달되기 전 생산라인에서 진행되는 마지막 품질검사임에 따라 검사장비가 판정오류 없이 제대로 작동하는 것이 매우 중요하다.X-RAY 검사기는 제조라인에서의 적용편의성, 인식률 등의 장점이 많은 반면, 이중·삼중 검사 시 종종 발견되는 미검·과검의 문제가 있어, X-RAY 검사 데이터의 AI 분석을 통해 장비셋팅, 검사기준 또는 여타 스펙을 개선할 수 있는 학습모델이 필요하게 되었다.
+2
+제조데이터셋 형태 및 수집방법(csv, json, image 파일 등)분석에 사용된 변수 : X-RAY상 결함(Defect)이 검출되어 표시된 이미지데이터 수집 방법 : X선이물검출기의 SD Card데이터셋 파일 확장자 : 결함 이미지(bmp), 불량내역 데이터(txt)
+3제조데이터 개수 / 제조데이터셋 총량데이터 개수 : 3,919개(bmp, jpg), 530개(txt)데이터셋 총량 : 419MB
+4분석적용 알고리즘알고리즘YOLOv3
+간략소개객체 탐지(Object Detection)의 주요 방법론 중 하나로서 이미지 내의 개별 객체의 위치를 추적하고 분류하는 방법론이다.객체가 시야 안에 있을 때 바로 판단하는 사람의 시각 기관(Human visual system)과 유사하도록 모델을 단일 신경망(single neural network)으로 구성한다.객체 탐지를 단일 회귀문제로 재구성하여 분석한다.이미지에 대한 경계 상자(Bounding Box)로 영역을 설정하고, 영역 내 물체의 종류(Class)나 유무를 판단하여 분류 및 객체 탐지 문제를 한 번에 해결한다.
+5
+분석결과 및 시사점X-RAY 검사기를 사용하여 품질검사를 하는 검사공정에서 이미지 데이터의 분석 및 학습을 통해 AI 객체 탐지 분석모델을 구축하였다.개발된 AI 모델을 통하여, X-RAY검사 시 제조기업에서 흔히 발생하는 미검·과검 문제를 해결하여 비용절감을 할 것이라고 기대한다.
+6
+제조데이터셋 활용(분석)을 위한최소 요구환경필요 SW : Anaconda, Python 3.7.3, (or version of python 3.x.x)필요 패키지 : Numpy, Pandas, Matplotlib, Keras, Sklearn, Tensorflow, Ipython, Pydotplus, Os, Graphviz, Random, Subprocess, Sys[CPU] i5-10400[GPU] gtx 1660 super[RAM] 32GB
+제조AI데이터셋 형태 미리보기
+input
+001_20200622_203312(6).bmp
+C:\OpenLabeling-master\OpenLabeling-master\main\input\001_20200622_203312(6).bmp
+Unknown
+576
+444
+3
+0
+Defect
+Unspecified
+0
+0
+361
+190
+366
+196
+Defect
+Unspecified
+0
+0
+359
+221
+367
+228
+Defect
+Unspecified
+0
+0
+359
+258
+366
+266
+input
+001_20200623_003516(8).jpg
+C:\OpenLabeling-master\OpenLabeling-master\main\input\001_20200623_003516(8).jpg
+Unknown
+576
+444
+3
+0
+Defect
+Unspecified
+0
+0
+351
+180
+354
+187
+Defect
+Unspecified
+0
+0
+348
+213
+352
+219
+Defect
+Unspecified
+0
+0
+344
+259
+349
+265
+input
+001_20200901_003429(1).bmp
+C:\OpenLabeling-master\OpenLabeling-master\main\input\001_20200901_003429(1).bmp
+Unknown
+576
+444
+3
+0
+Defect
+Unspecified
+0
+0
+469
+178
+476
+184목록
