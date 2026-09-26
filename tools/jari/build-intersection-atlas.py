@@ -86,58 +86,175 @@ def cosine(a: dict[str, float], b: dict[str, float]) -> float:
     return sum(value * b.get(term, 0) for term, value in a.items())
 
 
+def table_type(value: str, allow_unit: bool = False) -> bool:
+    value = re.sub(r"^데이터\s*형\s*:\s*", "", value.strip(), flags=re.I).lower()
+    if re.fullmatch(r"(?:u?int|float)(?:8|16|32|64)?|double|object|string|str|datetime|timestamp[s]?|date|category|bool(?:ean)?|numeric", value):
+        return True
+    return allow_unit and value in {"-", "m/s", "mm", "kgf", "ton", "sec", "ms", "bar", "hz", "v", "a", "kw", "%"}
+
+
+def field_name(value: str) -> bool:
+    if not (2 <= len(value) <= 32 or re.fullmatch(r"[A-Za-z]", value)) or re.fullmatch(r"[-+]?\d+(?:\.\d+)?[)]?", value):
+        return False
+    if re.match(r"^(?:[•●○*\[(]|\d+[).]|데이터형|파생변수로|그렇지|설명|비고|속성|수집|분석|구\s*분|[가-힣]+란)", value):
+        return False
+    return not value.endswith(("다.", "된다.", "있다."))
+
+
+def extract_table_columns(number: int, chunk: str) -> list[dict]:
+    """Only emit field/description pairs under recognizable guidebook table headers."""
+    lines = [re.sub(r"[\x00-\x1f]+", " ", x).strip() for x in chunk.splitlines()]
+    lines = [x for x in lines if x]
+    result = []
+    i = 0
+    while i < len(lines) - 2:
+        head = [x.lower().replace(" ", "") for x in lines[i:i + 4]]
+        mode = None
+        if head[:4] == ["컬럼명", "machbase", "datatype", "description"]:
+            mode, start = "name-type-desc", i + 4
+        elif head[:4] == ["data", "항목설명", "수집범위", "unit"]:
+            mode, start = "name-desc-range-unit", i + 4
+        elif head[:4] == ["no.", "변수", "설명", "데이터타입"]:
+            mode, start = "name-desc-type", i + 4
+        elif head[:3] == ["변수유형", "변수명", "설명"]:
+            mode, start = "category-name-desc", i + 3
+        elif head[:4] == ["속성(column)", "설명", "데이터형", "개수"]:
+            mode, start = "name-desc-type-count", i + 4
+        elif (head[0] in {"속성(column)", "속성명칭", "변수명", "attributesname"}
+              and head[1] in {"설명", "description", "설명"}
+              and head[2] in {"비고", "데이터타입", "datatype", "unit"}):
+            mode, start = "name-desc-type", i + 3
+        elif (head[:4] == ["no", "속성(column)", "설명", "비고"]):
+            mode, start = "name-desc-type", i + 4
+        elif head[:2] == ["속성(column)", "설명"]:
+            mode, start = "name-desc", i + 2
+        if not mode:
+            i += 1
+            continue
+        unit = head[2] == "unit" if mode == "name-desc-type" else False
+        j = start
+        while j < len(lines):
+            line = lines[j]
+            if re.match(r"^\s*(?:\[(?:표|그림)\s*\d+\]|[●•]|2\.2|3\)|-\s)", line):
+                break
+            if mode == "name-type-desc":
+                if j + 2 < len(lines) and field_name(line) and table_type(lines[j + 1]) and not table_type(lines[j + 2]):
+                    result.append({"name": line, "description": lines[j + 2], "page": number})
+                    j += 3
+                    continue
+            elif mode == "name-desc-range-unit":
+                if j + 3 < len(lines) and field_name(line) and field_name(lines[j + 1]) and re.search(r"\d|~|-", lines[j + 2]):
+                    result.append({"name": line, "description": lines[j + 1], "page": number})
+                    j += 4
+                    continue
+            elif mode == "name-desc-type-count":
+                if (j + 3 < len(lines) and field_name(line) and field_name(lines[j + 1])
+                        and table_type(lines[j + 2]) and re.fullmatch(r"[\d,]+", lines[j + 3])):
+                    result.append({"name": line, "description": lines[j + 1], "page": number})
+                    j += 4
+                    continue
+            elif mode == "name-desc":
+                if j + 1 < len(lines) and field_name(line) and field_name(lines[j + 1]):
+                    result.append({"name": line, "description": lines[j + 1], "page": number})
+                    j += 2
+                    continue
+            elif mode == "category-name-desc":
+                if (re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", line)
+                    and j + 1 < len(lines) and not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", lines[j + 1])
+                    and field_name(lines[j + 1])):
+                    result.append({"name": line, "description": lines[j + 1], "page": number})
+                    j += 2
+                    continue
+            elif mode == "name-desc-type" and field_name(line) and (not table_type(line, unit) or line.lower() in {"date", "datetime", "timestamp"}):
+                for end in range(j + 2, min(j + 7, len(lines))):
+                    if table_type(lines[end], unit):
+                        description = " ".join(lines[j + 1:end])
+                        if (2 <= len(description) <= 240 and not table_type(lines[j + 1], unit)
+                            and not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", lines[j + 1])):
+                            result.append({"name": line, "description": description, "page": number})
+                            j = end + 1
+                            break
+                else:
+                    j += 1
+                    continue
+                continue
+            j += 1
+        i = max(i + 1, j)
+    return result
+
+
+def extract_role_targets(number: int, chunk: str) -> list[dict]:
+    """Keep guidebook role-table targets distinct from verified tabular columns."""
+    lines = [x.strip() for x in chunk.splitlines() if x.strip()]
+    targets = []
+    for index, line in enumerate(lines[:-1]):
+        if line != "종속변수" or "독립변수" not in lines[max(0, index - 35):index]:
+            continue
+        if not any(x in {"구 분", "구분", "공정 변수 조건"} for x in lines[max(0, index - 40):index]):
+            continue
+        name = lines[index + 1]
+        if (field_name(name) and name not in {"없음", "표시 없음", "(표시 없음)"}
+                and not name.endswith("모델") and not re.match(r"^\d+\s*:", name)):
+            targets.append({"name": name, "description": "가이드북 종속변수 표에 기재 · 실제 컬럼 여부 확인 필요", "page": number})
+    return targets
+
+
+def is_timestamp_field(name: str) -> bool:
+    value = name.strip().lower()
+    if value in {"time", "date", "datetime", "timestamp", "tag_min", "wk_dt", "cret_time", "receiveddatetime", "std_dt", "mfg_dt", "시간", "날짜", "일자", "일시", "작업일", "작업시간", "생산일자", "생산시간", "측정시간", "측정시각", "수집일시"}:
+        return True
+    return bool(re.search(r"(?:^|_)(?:date|datetime|timestamp|dt)$", value))
+
+
 def guide_columns(relative: str, page_hint: str) -> dict:
     """Extract a conservative preview from a guidebook's variable-definition pages."""
     p = COMPETITION / "knowledge" / relative
     if not p.exists():
-        return {"status": "가이드북 전문 없음", "columns": [], "join": [], "time": [], "target": [], "excerpt": "", "path": relative}
+        return {"status": "가이드북 전문 없음", "columns": [], "join": [], "time": [], "target": [],
+                "targetAbsent": False, "targetDerived": False, "mixedLabels": False,
+                "roleTargets": [], "duplicateNames": [], "pages": [], "excerpt": "", "path": relative}
     text = p.read_text(encoding="utf-8-sig", errors="replace")
     pages = re.split(r"<!-- p\.(\d+) -->", text)
     chunks = [(int(pages[i]), pages[i + 1]) for i in range(1, len(pages) - 1, 2)]
     selected = []
     for number, chunk in chunks:
-        if "주요 변수 정의" in chunk or "변수 속성 정의" in chunk or "변수 정의 및 소개" in chunk:
+        if ("주요 변수 정의" in chunk or "변수 속성 정의" in chunk or "변수 정의 및 소개" in chunk
+                or extract_table_columns(number, chunk)):
             selected.append((number, chunk))
     if not selected:
         for number, chunk in chunks:
             if "종속변수" in chunk and "독립변수" in chunk:
                 selected.append((number, chunk))
-    if not selected or not any("변수" in c or "속성" in c for _, c in selected):
-        hinted = {int(x) for x in re.findall(r"\d+", page_hint or "")}
-        selected.extend((number, chunk) for number, chunk in chunks if number in hinted and number not in {n for n, _ in selected})
-    selected = selected[:3]
+    hinted = {int(x) for x in re.findall(r"\d+", page_hint or "")}
+    selected.extend((number, chunk) for number, chunk in chunks if number in hinted and number not in {n for n, _ in selected})
+    selected = sorted(selected, key=lambda entry: entry[0])[:10]
     candidates = []
-    stop = re.compile(r"^(속성|설명|비고|데이터 타입|데이터형|변수|독립변수|종속변수|공정 변수 조건|내 용|[\[【]표|[●○•]|- )")
     for number, chunk in selected:
-        lines = [x.strip() for x in chunk.splitlines() if x.strip()]
-        start = next((i for i, line in enumerate(lines) if "주요 변수 정의" in line or "변수 정의 및 소개" in line), 0)
-        lines = lines[start : start + 165]
-        for index, line in enumerate(lines[:-1]):
-            if not 2 <= len(line) <= 42 or stop.search(line) or re.match(r"^\d+$", line):
-                continue
-            nxt = lines[index + 1]
-            if not 5 <= len(nxt) <= 140 or stop.search(nxt) or nxt.startswith("["):
-                continue
-            if any(bad in line for bad in ("수집 기간", "수집 주기", "제조AI데이터셋", "분석에 사용", "아래 그림", "주요 변수 기술")):
-                continue
-            if line.endswith(("다.", "있다.", "한다.", "한다", "있음")) or re.search(r"하고자|에서 측정|에 대해|발생한|의 두께|의 상태", line):
-                continue
-            if not ("데이터형" in lines[index + 2] if index + 2 < len(lines) else False) and not re.search(r"(컬럼|변수|값|여부|수량|번호|시간|온도|압력|출력|전류|길이|색상|두께|비율|LOT|불량)", nxt):
-                continue
-            record = {"name": line, "description": nxt, "page": number}
-            if record not in candidates and all(x["name"] != line for x in candidates):
+        for record in extract_table_columns(number, chunk):
+            if not any((x["name"], x["description"]) == (record["name"], record["description"]) for x in candidates):
                 candidates.append(record)
-    key_pattern = re.compile(r"배정번호|LOT\s*(?:NO\.?|번호)?|Work[_ ]?ID|PART[_ ]?NO|PIPE[_ ]?NO|TAG_MIN|Timestamp|작업일|작업자|설비명|품번|불량수량|PassOrFail|FIN[_ ]?JGMT", re.I)
-    key_lines = [entry for entry in candidates if key_pattern.search(entry["name"])]
-    join = [x for x in key_lines if re.search(r"번호|\bLOT\b|Work|PART|PIPE", x["name"], re.I)]
-    time = [x for x in key_lines if re.search(r"시간|작업일|TAG_MIN|Timestamp", x["name"], re.I)]
-    target = [x for x in candidates if re.search(r"불량|품질|PassOrFail|JGMT|위험|안정", x["name"], re.I)]
-    compact = re.sub(r"\s+", "", text)
-    target_absent = bool(re.search(r"(레이블|라벨).{0,45}(종속변수는포함되어있지|포함되지않)", compact)) or bool(re.search(r"표시없음/Unlabeled", compact, re.I))
-    excerpt = " ".join(re.sub(r"\s+", " ", chunk).strip()[:650] for _, chunk in selected[:2])
-    return {"status": "가이드북 변수 정의 페이지 자동 추출 · 원문 대조 필요" if selected else "변수 정의 구간 자동 미검출",
-            "columns": candidates[:35], "join": join[:8], "time": time[:8], "target": target[:8],
-            "targetAbsent": target_absent, "pages": [n for n, _ in selected], "excerpt": excerpt, "path": relative}
+    key_pattern = re.compile(r"^(?:배정번호|LOT(?:[_\s]*(?:NO\.?|번호)|\d*)?|Work[_ ]?ID|PART[_ ]?NO\*?|PIPE[_ ]?NO|PRODT_ORDER_NO|Serial(?:No|Number)|No_Shot|Shot|품번|계획번호)$", re.I)
+    join = [x for x in candidates if key_pattern.search(x["name"])]
+    time = [x for x in candidates if is_timestamp_field(x["name"])]
+    target = [x for x in candidates if re.search(r"불량|품질|PassOrFail|JGMT|위험|안정|Machine_Status|Quality", x["name"], re.I)]
+    role_targets = [record for number, chunk in selected for record in extract_role_targets(number, chunk)]
+    compact = re.sub(r"\s+", "", " ".join(chunk for _, chunk in selected))
+    mixed_labels = bool(re.search(r"(?:라벨|레이블)이있는.{0,20}(?:라벨|레이블)이없는|labeled_data.{0,100}unlabeled_data", compact, re.I))
+    target_absent = not mixed_labels and bool(re.search(r"라벨링이되어있지않은데이터|레이블을포함하는종속변수는포함되어있지않|양품불량여부는알수없|표시없음/Unlabeled", compact, re.I))
+    target_derived = bool(re.search(r"(?:종속변수|설비이상신호|불량단계).{0,35}파생변수|파생변수.{0,35}(?:종속변수|설비이상신호|불량단계)", compact))
+    duplicates = sorted({x["name"] for x in candidates if sum(y["name"] == x["name"] for y in candidates) > 1})
+    excerpt_pages = selected[:2] or [(number, chunk) for number, chunk in chunks if "데이터 유형/구조" in chunk][:1]
+    excerpts = []
+    for _, chunk in excerpt_pages:
+        anchor = next((chunk.find(term) for term in ("주요 변수 정의", "데이터 유형/구조", "데이터 속성정의") if term in chunk), 0)
+        excerpts.append(re.sub(r"\s+", " ", chunk[anchor:anchor + 750]).strip())
+    excerpt = " ".join(excerpts)
+    return {"status": "가이드북 표에서 컬럼·설명 자동 추출 · 원문 대조 필요" if candidates else ("가이드북 변수 정의 페이지 확인 · 표 구조 자동 미해석" if selected else "변수 정의 구간 자동 미검출"),
+            "columns": candidates, "join": join[:8], "time": time[:8], "target": target[:8],
+            "targetAbsent": target_absent, "targetDerived": target_derived, "mixedLabels": mixed_labels,
+            "roleTargets": role_targets,
+            "duplicateNames": duplicates,
+            "pages": [n for n, _ in selected], "excerpt": excerpt, "path": relative}
 
 
 ideas = []
@@ -196,6 +313,9 @@ direct = [
 for idx, (location, title, description) in enumerate(direct, 1):
     p = domain_root / location
     if p.exists():
+        body_text = p.read_text(encoding="utf-8-sig", errors="replace")
+        if len(body_text.strip()) < 100:
+            continue
         veda.append({"id": f"veda-direct-{idx}", "title": title, "description": description,
                      "status": "원문 텍스트 확인", "axis": "Lean·품질", "path": str(p),
                      "level": "로컬 본문 확인", "sector": process_tags(description),
@@ -222,7 +342,11 @@ for i, idea in enumerate(ideas):
         problem = len(a & b) / max(1, min(3, len(a)))
         source = 1.0 if re.search(rf"(?<!\d){data['id']}(?!\d)", idea["proposal"]) else 0.0
         guide = data["guideEvidence"]
-        label = 0.0 if guide["targetAbsent"] else (1.0 if guide["target"] else 0.45)
+        label = (0.0 if guide["targetAbsent"] else
+                 0.65 if guide["mixedLabels"] and guide["target"] else
+                 0.7 if guide["targetDerived"] and guide["target"] else
+                 1.0 if guide["target"] else
+                 0.55 if guide["roleTargets"] else 0.35)
         item.append({"id": data["id"], "text": round(text, 4), "process": round(process, 4),
                      "problem": round(problem, 4), "source": source, "label": label})
     scores[idea["id"]] = item
@@ -240,23 +364,31 @@ for i, idea in enumerate(ideas):
     idea["veda"] = sorted(refs, key=lambda x: -x["strength"])[:8]
 
 archive_families = []
+archive_titles = []
 family_root = VEDA / "absorbed-references/0000_domain"
 if family_root.exists():
     for p in sorted(family_root.iterdir()):
         if p.is_dir() and re.match(r"^\d\d_", p.name):
             archive_families.append({"name": p.name, "files": sum(1 for f in p.iterdir() if f.is_file())})
+            for f in p.iterdir():
+                if f.is_file() and f.suffix.lower() in {".pdf", ".md", ".txt", ".html"}:
+                    archive_titles.append({"title": f.stem.replace("_", " ")[:180], "category": p.name,
+                                           "type": f.suffix.lower(), "path": str(f), "level": "파일명만 확인"})
 
 payload = {
     "title": "Q.AI 제조 현안 교집합 지도", "generated": "2026-09-26",
-    "ideas": ideas, "datasets": datasets, "veda": veda, "kpSources": len(KPIC), "archiveFamilies": archive_families,
+    "ideas": ideas, "datasets": datasets, "veda": veda, "kpSources": len(KPIC),
+    "archiveFamilies": archive_families, "archiveTitles": archive_titles,
     "scores": scores, "edges": [{k: e.get(k) for k in ("source", "target", "kind", "verdict", "basis", "note", "scope")} for e in MAP["edges"]],
     "weights": WEIGHTS,
     "limits": [
         "가이드북 변수 정의 페이지의 컬럼·설명을 문자 n-gram TF-IDF 코사인에 넣고 공정·문제·PPT 후보 신호를 결합한다. 표가 줄 단위로 풀린 자동 추출이므로 각 컬럼은 원문 PDF 대조가 필요하다. 신경망 Attention이나 사전학습 벡터 임베딩이 아니다.",
+        "목표변수 신호는 가이드북 표의 컬럼명에 따른 탐색 힌트다. 별도 종속변수 표는 실제 컬럼과 구별해 낮게 취급한다. 라벨 혼합과 파생 목표변수도 낮게 취급하며, 원본 파일별 실제 라벨·생성 시점·누수 여부를 확인해야 한다.",
         "소프트맥스 표시 가중치는 후보 50종 안에서 상대적으로 분배한 값이며 적합 확률·성능 수치가 아니다.",
-        "VEDA 인덱스 항목은 제목·설명으로 연결한다. 변동점↔시각관리처럼 출처 간 개념 대응은 명시적 수동 브리지를 더한다. 원문을 확인한 Lean/CQI-20 문서만 별도 표시한다. VEDA 원문은 모델 입력이 아니다.",
+        "VEDA 33개 제조·관련 도메인의 최상위 파일명은 발견용 인덱스로만 제공한다. 73개 참조 인덱스의 제목·설명으로 연결하고, 변동점↔시각관리처럼 출처 간 개념 대응은 명시적 수동 브리지를 더한다. 원문을 확인한 Lean/CQI-20 문서만 별도 표시한다. VEDA 원문은 모델 입력이 아니다.",
         "KAMP 원본 분석 데이터는 이 프로젝트 data/raw에 없다. 팀원 관계 지도의 수치·결합 판정은 별도 재현 전이다.",
         "산업적 유사성과 데이터 결합 가능성은 서로 다르다. 공통 공정명만으로 두 데이터셋의 행을 조인하지 않는다.",
+        "시간 결합 후보는 날짜·시각 필드로 제한했다. Cycle_Time 같은 소요시간은 타임스탬프가 아니며, 같은 이름의 키라도 실제 값·단위·시점이 맞는지는 검증 전이다.",
     ],
     "provenance": {"idea": BOARD.get("ideaIntake", {}), "map": MAP.get("provenance", {}),
                    "guidebookManifest": "knowledge/kamp-guidebooks-manifest.csv",
