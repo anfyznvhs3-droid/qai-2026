@@ -168,7 +168,7 @@
       <div>
         <h1>자리</h1>
         <p class="sub" id="presence"></p>
-        <p class="sub">취합한 아이디어 10개를 보고, 함께 3개를 고릅니다.</p>
+        <p class="sub">취합한 아이디어 20개를 보고, 함께 3개를 고릅니다.</p>
       </div>
       <div class="who">
         <label>내 이름
@@ -183,7 +183,7 @@
     </header>
     <nav class="pages">
       <button type="button" data-page="setup" class="on">1 셋업</button>
-      <button type="button" data-page="ideas">2 아이디어 10</button>
+      <button type="button" data-page="ideas">2 아이디어 20</button>
       <button type="button" data-page="data">3 데이터 2종</button>
       <button type="button" data-page="begin">4 시작</button>
       <a href="/dash">대시</a>
@@ -211,7 +211,7 @@
       <div id="cols" class="cols"></div>
       <section class="decision" aria-labelledby="decision-title">
         <div class="decision-head">
-          <div><h2 id="decision-title">아이디어 10개</h2><p class="decision-steps">읽고 선택하세요. 회의 후보는 함께 정합니다.</p></div>
+          <div><h2 id="decision-title">아이디어 20개</h2><p class="decision-steps">읽고 선택하세요. 회의 후보는 함께 정합니다.</p></div>
           <button id="copy-decision" type="button" class="ghost">회의 요약 복사</button>
         </div>
         <div id="decision-summary" class="decision-summary"></div>
@@ -540,7 +540,7 @@
       const summary = document.getElementById("decision-summary");
       summary.replaceChildren();
       for (const line of [
-        "취합 " + filled + "/10",
+        "취합 " + filled + "/" + next.ideas.length,
         "투표 참여 " + cast + "/3명",
         "내 선택 " + own.length + "/3",
         "회의 후보 " + state.finalists.length + "/3",
@@ -568,7 +568,7 @@
         const head = document.createElement("div");
         head.className = "row";
         const title = document.createElement("h3");
-        title.textContent = String(row.order + 1).padStart(2, "0");
+        title.textContent = idea.sourceId || String(row.order + 1).padStart(2, "0");
         const marker = document.createElement("strong");
         marker.className = "meta";
         marker.textContent = finalist ? "회의 후보" : leader ? "상위권" : "";
@@ -612,7 +612,18 @@
           decisionButton(selected ? "선택 취소" : "선택", "vote", idea.id, !ideaHasText(idea) && !selected, selected),
           decisionButton(finalist ? "후보에서 빼기" : "후보 담기", "finalist", idea.id, !ideaHasText(idea) && !finalist, finalist),
         );
-        item.append(head, description, loss, track, tags, actions);
+        item.append(head, description, loss);
+        if (idea.sourceId) {
+          const detail = document.createElement("details");
+          const summary = document.createElement("summary");
+          summary.textContent = "원문 대응·데이터 후보";
+          detail.append(summary);
+          for (const text of ["현재 대응: " + idea.currentHandling, "KAMP 후보 (미검증): " + idea.proposedDatasets, "분류: " + idea.category, "출처: 사용자 PPT " + idea.sourceSlide + "쪽 · " + idea.sourceId]) {
+            const p = document.createElement("p"); p.className = "meta"; p.textContent = text; detail.append(p);
+          }
+          item.append(detail);
+        }
+        item.append(track, tags, actions);
         grid.append(item);
       }
       const shortlist = document.getElementById("shortlist-list");
@@ -621,7 +632,7 @@
         const id = state.finalists[index];
         const idea = next.ideas.find((row) => row.id === id);
         const slot = document.createElement("span");
-        slot.textContent = idea ? (index + 1) + ". " + id + " · " + (idea.process || idea.event || "내용 입력 대기") : (index + 1) + ". 비어 있음";
+        slot.textContent = idea ? (index + 1) + ". " + (idea.sourceId || id) + " · " + (idea.process || idea.event || "내용 입력 대기") : (index + 1) + ". 비어 있음";
         shortlist.append(slot);
       }
       document.getElementById("shortlist-meta").textContent = state.by
@@ -637,7 +648,7 @@
       })).sort((a, b) => b.count - a.count || a.idea.id.localeCompare(b.idea.id));
       return [
         "Q.AI 아이디어 회의 초안",
-        "아이디어 " + next.ideas.filter(ideaHasText).length + "/10",
+        "아이디어 " + next.ideas.filter(ideaHasText).length + "/" + next.ideas.length,
         "투표: " + seats.map((seat) => seat + " " + ((state.votes[seat] || []).join(", ") || "없음")).join(" · "),
         "",
         "득표",
@@ -769,20 +780,20 @@
       const dataOk = dataCount === 2 && pair.idA !== pair.idB && pair.join !== "모름" && Boolean(String(pair.linkNote || "").trim());
       const items = [
         [setupOk, "주제 한 줄"],
-        [filled >= 10, `아이디어 ${filled}/10`],
+        [next.ideas.length > 0 && filled >= next.ideas.length, `아이디어 ${filled}/${next.ideas.length}`],
         [dataOk, "서로 다른 데이터 2종과 연결 근거"],
       ];
       document.getElementById("begin-list").innerHTML = items.map(([ok, label]) => `<li>${ok ? "됨" : "아직"} · ${esc(label)}</li>`).join("");
       const button = document.getElementById("begin-go");
       button.hidden = Boolean(next.started);
-      button.disabled = !(setupOk && filled >= 10 && dataOk);
+      button.disabled = !(setupOk && next.ideas.length > 0 && filled >= next.ideas.length && dataOk);
       document.getElementById("after-start").hidden = !next.started;
       const runId = String(next.run?.id || "").trim();
       if (next.started) document.getElementById("begin-err").textContent = runId ? `시작됨. ${runId}` : "시작됨.";
       const topic = String(next.setup?.topic || "").trim();
       document.getElementById("live").textContent = [
         topic ? "주제 있음" : "주제 없음",
-        `아이디어 ${filled}/10`,
+        `아이디어 ${filled}/${next.ideas.length}`,
         `데이터 ${dataCount}/2`,
         pair.join && pair.join !== "모름" ? `잇는 키 ${pair.join}` : "잇는 키 모름",
         next.started ? (runId || "시작됨") : "시작 전",
@@ -1054,5 +1065,6 @@
     fetch("/api/me").then(r => r.json()).then(info => { if (info.seat) { document.getElementById("me").value = info.seat; showApp(); } }).catch(() => {});
   </script>
 <script src="/collab.js"></script>
+<script src="/relationships.js"></script>
 </body>
 </html>

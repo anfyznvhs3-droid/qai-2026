@@ -180,7 +180,7 @@ nav.pages button.on { background:#e2ebe6 !important; color:#174f39 !important; f
       const runId = String(next.run?.id || "").trim();
       const kpis = [
         ["주제", topic || "없음"],
-        ["아이디어", `${filled}/10`],
+        ["아이디어", `${filled}/${next.ideas.length}`],
         ["데이터", `${dataCount}/2`],
         ["시작", runId || (next.started ? "시작됨" : "시작 전")],
       ];
@@ -218,7 +218,7 @@ nav.pages button.on { background:#e2ebe6 !important; color:#174f39 !important; f
       const box = document.getElementById("decision");
       box.replaceChildren();
       const heading = document.createElement("h2");
-      heading.textContent = "10 → 3 회의 결정판";
+      heading.textContent = "20 → 3 회의 결정판";
       const participation = document.createElement("p");
       participation.className = "sub";
       participation.textContent = "투표 참여 " + voters + "/3명 · 후보 " + (state.finalists || []).length + "/3 · 회의 초안";

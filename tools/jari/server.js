@@ -90,7 +90,7 @@ function emptyBoard() {
     ["jw", "정진우"],
     ["ye", "엄예지"],
   ]) {
-    for (let i = 1; i <= 5; i += 1) {
+    for (let i = 1; i <= 10; i += 1) {
       ideas.push({
         id: `${prefix}-${i}`,
         owner,
@@ -143,7 +143,7 @@ function startMissing(current) {
   const missing = [];
   if (!String(current.setup?.topic || "").trim()) missing.push("주제 한 줄");
   const filled = current.ideas.filter((row) => [row.process, row.event, row.loss].every(v => String(v || "").trim())).length;
-  if (filled < 10) missing.push(`아이디어 ${filled}/10`);
+  if (!current.ideas.length || filled < current.ideas.length) missing.push(`아이디어 ${filled}/${current.ideas.length}`);
   const pair = current.pair || {};
   if (!String(pair.idA || "").trim() || !String(pair.idB || "").trim()) missing.push("데이터 2종 ID");
   if (pair.idA && pair.idA === pair.idB) missing.push("서로 다른 데이터 ID");
@@ -361,7 +361,7 @@ function findCard(list, id) {
 }
 
 function patchIdea(body) {
-  if (!/^(jw|ye)-[1-5]$/.test(body.id || "")) return false;
+  if (!/^(jw|ye)-(?:[1-9]|10)$/.test(body.id || "")) return false;
   const card = findCard(board.ideas, body.id);
   if (!card) return false;
   if (body.process !== undefined) card.process = clip(body.process, 200);
@@ -377,7 +377,7 @@ function validDecisionIds(ids) {
     && ids.length <= 3
     && new Set(ids).size === ids.length
     && ids.every((id) => typeof id === "string"
-      && /^(jw|ye)-[1-5]$/.test(id)
+      && /^(jw|ye)-(?:[1-9]|10)$/.test(id)
       && board.ideas.some((idea) => idea.id === id));
 }
 
@@ -592,9 +592,9 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    if (req.method === "GET" && url.pathname === "/collab.js") {
+    if (req.method === "GET" && ["/collab.js", "/relationships.js"].includes(url.pathname)) {
       res.writeHead(200, { "Content-Type": "text/javascript; charset=utf-8", "Cache-Control": "no-store" });
-      res.end(fs.readFileSync(path.join(root, "public", "collab.js"))); return;
+      res.end(fs.readFileSync(path.join(root, "public", url.pathname.slice(1)))); return;
     }
     if (req.method === "GET" && url.pathname === "/install.ps1") {
       const host = String(req.headers.host || "");
@@ -654,6 +654,11 @@ const server = http.createServer(async (req, res) => {
       for (const field of ["loss", "dataA", "dataB", "join", "action", "kpi", "evidence", "unknown", "reason"]) row[field] = clip(body[field], 1200);
       board.evidence[body.id] = row; bump();
       return sendJson(res, 200, { ok: true });
+    }
+    if (req.method === "GET" && url.pathname === "/api/relationship-map") {
+      const file = path.join(dataDir, "intake", "relationship-map.json");
+      if (!fs.existsSync(file)) return sendJson(res, 404, { ok: false, error: "관계도 자료가 아직 없습니다." });
+      return sendJson(res, 200, JSON.parse(fs.readFileSync(file, "utf8")));
     }
     if (req.method === "GET" && url.pathname === "/api/board") {
       sendJson(res, 200, board);
@@ -715,7 +720,7 @@ const server = http.createServer(async (req, res) => {
       if (body.nameB !== undefined) board.pair.nameB = clip(body.nameB, 80);
       if (body.join !== undefined && joinValues.has(body.join)) board.pair.join = body.join;
       if (body.linkNote !== undefined) board.pair.linkNote = clip(body.linkNote, 400);
-      if (body.ideaId !== undefined && (body.ideaId === "" || /^(jw|ye)-[1-5]$/.test(body.ideaId))) {
+      if (body.ideaId !== undefined && (body.ideaId === "" || /^(jw|ye)-(?:[1-9]|10)$/.test(body.ideaId))) {
         board.pair.ideaId = body.ideaId;
       }
       bump();

@@ -51,7 +51,7 @@
   const draftKey=()=>"jari-draft:"+me()+":"+topic+":"+replyTo;
   const readKey=t=>"jari-read:"+me()+":"+t;
   const messages=t=>(state?.messages||[]).filter(m=>m.topic===t);
-  const label=t=>t==="general"?"전체 대화":String((state?.ideas.findIndex(i=>i.id===t)??-1)+1).padStart(2,"0")+" · "+(state?.ideas.find(i=>i.id===t)?.process||"취합 대기");
+  const label=t=>t==="general"?"전체 대화":(state?.ideas.find(i=>i.id===t)?.sourceId||String((state?.ideas.findIndex(i=>i.id===t)??-1)+1).padStart(2,"0"))+" · "+(state?.ideas.find(i=>i.id===t)?.process||"취합 대기");
   async function request(url,data){const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});const b=await r.json();if(!r.ok)throw new Error(b.error || "저장 실패 · 로그인과 연결 상태를 확인하세요.");return b;}
   function markRead(){const m=messages(topic);if($("team-details").open && document.visibilityState==="visible" && $("messages").scrollHeight-$("messages").scrollTop-$("messages").clientHeight<60 && m.length)localStorage.setItem(readKey(topic),m.at(-1).at);}
   function renderTopics(){
@@ -96,12 +96,14 @@
     const button=e.submitter;button.disabled=true;
     try{await request("/api/evidence",data);dirty=false;version=data.version+1;$("evidence-status").textContent="저장됨";}catch(err){$("evidence-status").textContent=err.message+" 작성 내용은 유지됩니다.";}finally{button.disabled=false;}
   };
-  function compare(){const ids=state?.decision?.finalists||[];$("comparison").replaceChildren();if(!ids.length){$("comparison").append(node("p","‘아이디어 10개’에서 후보를 담으면 여기에 나란히 표시됩니다."));return;}
+  function compare(){const ids=state?.decision?.finalists||[];$("comparison").replaceChildren();if(!ids.length){$("comparison").append(node("p","‘아이디어 20개’에서 후보를 담으면 여기에 나란히 표시됩니다."));return;}
     const table=document.createElement("table"), head=document.createElement("tr");head.append(node("th","비교 항목"));for(const id of ids)head.append(node("th",label(id)));table.append(head);
+    for(const [k,l] of [["event","현장 문제"],["loss","원문 손실"],["currentHandling","현재 대응"],["proposedDatasets","KAMP 후보 · 미검증"]]){const tr=document.createElement("tr");tr.append(node("th",l));for(const id of ids)tr.append(node("td",state.ideas.find(i=>i.id===id)?.[k]||"미기재"));table.append(tr);}
     for(const [k,l] of Object.entries(fields)){const tr=document.createElement("tr");tr.append(node("th",l));for(const id of ids)tr.append(node("td",state.evidence?.[id]?.[k]||"미확인"));table.append(tr);}$("comparison").append(table);
   }
   const nav=document.querySelector("nav.pages");nav.replaceChildren();
-  const tabs=[["choose","아이디어 10개"],["compare","후보 비교"],["prepare","회의 준비"]];
+  const tabs=[["choose","아이디어 20개"],["compare","후보 비교"],["map","데이터 관계도"],["prepare","회의 준비"]];
+  const relationshipPanel=document.createElement("section");relationshipPanel.id="relationship-panel";relationshipPanel.className="collab";relationshipPanel.hidden=true;$("page-ideas").append(relationshipPanel);
   const intro=document.querySelector("#page-ideas > p");
   const team=document.createElement("details");team.className="team-fold";team.append(node("summary","팀 작업 현황"));
   const cards=$("cards");cards.before(team);team.append(cards);$("app").insertBefore(team,area);
@@ -120,6 +122,8 @@
     $("cols").hidden=true;intro.hidden=true;
     document.querySelector(".decision").hidden=view!=="choose";evidence.hidden=view!=="compare";
     nav.querySelectorAll("button").forEach(b=>{b.classList.toggle("on",b.dataset.view===view);b.setAttribute("aria-pressed",String(b.dataset.view===view));});
+    relationshipPanel.hidden=view!=="map";
+    if(view==="map")window.dispatchEvent(new Event("jari-map-open"));
     if(view==="compare")compare();
   }
   for(const [view,labelText] of tabs){const b=node("button",labelText);b.type="button";b.dataset.view=view;b.onclick=()=>setView(view);nav.append(b);}
@@ -177,7 +181,7 @@
     for(const option of $("evidence-id").options)option.textContent=label(option.value);
     if(!$("evidence-id").options.length){for(const idea of state.ideas){const o=node("option",label(idea.id));o.value=idea.id;$("evidence-id").append(o);}$("evidence-id").dataset.loaded=$("evidence-id").value;loadEvidence();}
     const complete=state.ideas.filter(i=>[i.process,i.event,i.loss].every(v=>String(v||"").trim())).length;
-    $("live").textContent=complete ? "취합 "+complete+"/10 · 각자 3개까지 선택하세요." : "취합본을 기다리고 있습니다. 전달받은 아이디어 10개가 이곳에 표시됩니다.";
+    $("live").textContent=complete ? "취합 "+complete+"/"+state.ideas.length+" · 각자 3개까지 선택하세요." : "취합본을 기다리고 있습니다. 전달받은 아이디어 20개가 이곳에 표시됩니다.";
     if(!dirty)loadEvidence();else if((state.evidence?.[$("evidence-id").value]?.version||0)!==version)$("evidence-status").textContent="다른 팀원이 수정했습니다. 작성 내용은 유지되며 저장 시 충돌을 확인합니다.";compare();renderChat();
     document.querySelectorAll('[data-kind="idea"]').forEach(card=>{const idea=state.ideas.find(i=>i.id===card.dataset.id);if(idea)card.querySelectorAll("input,select,textarea").forEach(el=>el.disabled=idea.owner!==me());});
   });
