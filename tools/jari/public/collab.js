@@ -128,6 +128,7 @@
   }
   for(const [view,labelText] of tabs){const b=node("button",labelText);b.type="button";b.dataset.view=view;b.onclick=()=>setView(view);nav.append(b);}
   const dashboard=node("a","프로젝트 현황 ↗");dashboard.href="/dash";nav.append(dashboard);
+  const intersectionLink=node("a","현안 교집합 ↗");intersectionLink.href="/intersection";nav.append(intersectionLink);
   const installLink=node("a","에이전트 설치");installLink.href="#agent-install";installLink.onclick=()=>{installPanel.open=true;};nav.append(installLink);
   setView(tabs.some(t=>t[0]===sessionStorage.getItem("jari-view"))?sessionStorage.getItem("jari-view"):"choose");
   const uiStyle=document.createElement("style");uiStyle.textContent=`

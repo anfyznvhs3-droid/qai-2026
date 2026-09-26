@@ -1,5 +1,19 @@
 # 자리
 
+## 제조 현안 교집합 지도
+
+운영 보드의 **현안 교집합** 또는 `/intersection`에서 HTML 지도를 연다. 아이디어 20건, KAMP 가이드북 50종의 변수 설명, 팀원 데이터 관계 42개, 뿌리산업·VEDA 참조를 한 화면에서 비교한다. 이 화면은 탐색 자료이며 투표·과제 잠금을 바꾸지 않는다.
+
+생성 스크립트와 템플릿은 이 저장소에 있고, 사용자 PPT에서 온 아이디어·팀원 ZIP 관계·생성 HTML은 서버의 `data/`에만 둔다. 호스트에서 자료를 배치한 뒤 실행한다.
+
+```powershell
+python tools/jari/build-intersection-atlas.py
+```
+
+필요한 로컬 파일은 `tools/jari/data/board.json`, `tools/jari/data/intake/relationship-map.json`, 프로젝트의 가이드북 목록·전문, VEDA 참조 인덱스다. 경로가 다르면 `QAI_CONTEST_ROOT`, `VEDA_IMPORTS_ROOT` 환경 변수를 설정한다. 운영 폴더가 `F:\working\002.USEFUL\qai-jari`라면 그곳의 `build-intersection-atlas.py`를 실행한다.
+
+텍스트 유사도는 가이드북 변수 페이지의 문자 n-gram TF-IDF로 계산하며, 공정·문제·PPT 후보·목표변수 신호와 가중 결합한다. 일부 표는 자동 추출이 불완전하므로 페이지·발췌를 함께 보여준다. 소프트맥스 표시값은 후보 간 상대 가중치이며 성능·적합 확률이 아니다. VEDA 원문은 분석 데이터에 섞지 않는다.
+
 ## 각 노트북에 한 줄 설치
 
 같은 Wi-Fi에서 보드에 본인 이름으로 들어간 뒤 **에이전트 설치 → 설치 명령 복사**를 누르고 PowerShell에 붙여 넣는다. 압축 해제, 관리자 권한, Node 설치는 필요 없다. Windows PowerShell 5.1 이상을 사용한다.

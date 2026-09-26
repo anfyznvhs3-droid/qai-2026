@@ -611,6 +611,18 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === "GET" && url.pathname === "/intersection") {
+      const file = path.join(dataDir, "intersection-atlas.html");
+      if (!fs.existsSync(file)) {
+        res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+        res.end("교집합 지도가 아직 생성되지 않았습니다.");
+        return;
+      }
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" });
+      res.end(fs.readFileSync(file));
+      return;
+    }
+
     const sessionToken = readCookie(req.headers.cookie)["jari-member"];
     const session = sessions.get(sessionToken);
     req.member = session && session.expires > Date.now() ? session.seat : "";
